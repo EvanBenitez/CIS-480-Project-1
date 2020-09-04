@@ -7,3 +7,6 @@ I think I'm going to place all the things that need to be worked on in the issue
 I moved everything for the mipsParser into one file. I think it will be less confusing, if I just leave the test main in the same .c file. My plan is to do this from now on, and once everything is finished, we can just move all the relevant code to one file.
 
 I'm currently working on the assumption that the code for every instruction will be a separate function. If we have each one return an int, that will be the equivalent of one MIPS instruction.
+
+##Embedder
+Finished the embedder. Can use it to insert a number into an int at a specified offset. I needed to print out the int as a binary number to check it, so I've also included a binary print for int (called binary_checker)
