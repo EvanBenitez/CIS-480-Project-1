@@ -57,6 +57,9 @@ int typeII_func(struct mips_line line){
   else{
     opt = (int) strtol(line.op3,NULL,10);
   }
+  if(opt < 0){
+    opt = opt & 0x0000ffff;
+  }
   inst = embedder(inst,opt,0);
 
 
