@@ -95,6 +95,7 @@ struct symbol_table *create_table(FILE *code){
       if(line.lable[0] != 0){
         strcpy(table[lable_count].lable,line.lable);
         table[lable_count].position = data_counter;
+        table[lable_count].lable[strlen(table[lable_count].lable)-1] = 0;
         lable_count++;
       }
       if(0 == strcmp(line.inst_dir,".word")){
@@ -115,6 +116,7 @@ struct symbol_table *create_table(FILE *code){
       if(line.lable[0] != 0){
         strcpy(table[lable_count].lable,line.lable);
         table[lable_count].position = text_counter;
+        table[lable_count].lable[strlen(table[lable_count].lable)-1] = 0;
         lable_count++;
       }
       if(0 == strcmp(line.inst_dir,"la")){
