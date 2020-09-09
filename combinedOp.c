@@ -5,7 +5,7 @@
 struct {
   const char *name;
   const unsigned int address;
-} instMap[] = {
+} r_type_inst[] = {
   {"add", 32 },
   {"sub", 34 },
   {"slt", 42},
@@ -13,6 +13,16 @@ struct {
   {"srl", 2},
   { NULL, 0},
 };
+
+struct {
+  const char *name;
+  const unsigned int address;
+} i_type_inst[] = {
+  {"lw", 35 },
+  {"sw", 43},
+  { NULL, 0},
+};
+
 
 int embedder(int,int,int);
 
@@ -26,15 +36,66 @@ struct mips_line {
   char op3[40];      //third operand   
 };
 
-int convertToMachCode(struct mips_line line){
+int i_type_machine_code(struct mips_line line){
+  unsigned int opcode;
+  unsigned int inst;
+  //checks if any instruction matches and sets the decimal to inst
+  for(int i=0; i_type_inst[i].name != NULL; i++) {
+    if(strcmp(line.inst_dir, i_type_inst[i].name) == 0) {
+      printf("%s: ", i_type_inst[i].name); //just adding for convinience in testing
+      inst = i_type_inst[i].address;
+    }
+  }
+
+  int opt = 0;
+  int op1;
+  opcode = inst;
+  inst = embedder(inst,opcode, 26);
+
+  //rd
+  if(line.op1[2] == 0){
+    opt = line.op1[1] - 48;
+  }
+  else{
+    opt = line.op1[2] - 48 + (line.op1[1] - 48) * 10;
+  }
+  inst = embedder(inst,opt,16);
+
+  //rs
+  for(int i=0; i < sizeof(line.op2); i++){
+    if(line.op2[i] == 40){ //"("
+      if(line.op2[i+3] == 0 || 41) { //")"
+        opt = line.op2[i+2] - 48;
+      }
+      else{
+        opt = line.op2[i+3] - 48 + (line.op2[i+2] - 48) * 10;
+      }
+    }
+  }
+    inst = embedder(inst,opt,21);
+  
+  //Offset Address
+  if(line.op2[1] == 0){
+    opt = line.op2[0] - 48;
+  }
+  else{
+    opt = line.op2[1] - 48 + (line.op2[0] - 48) * 10;
+  }
+  inst = embedder(inst,opt,0);
+
+  return inst;
+}
+
+
+int r_type_machine_code(struct mips_line line){
 
   unsigned int inst;
 
   //checks if any instruction matches and sets the decimal to inst
-  for(int i=0; instMap[i].name != NULL; i++) {
-    if(strcmp(line.inst_dir, instMap[i].name) == 0) {
-      printf("%s: ", instMap[i].name); //just adding for convinience in testing
-      inst = instMap[i].address;
+  for(int i=0; r_type_inst[i].name != NULL; i++) {
+    if(strcmp(line.inst_dir, r_type_inst[i].name) == 0) {
+      printf("%s: ", r_type_inst[i].name); //just adding for convinience in testing
+      inst = r_type_inst[i].address;
     }
   }
 
@@ -57,8 +118,14 @@ int convertToMachCode(struct mips_line line){
   else{
     opt = line.op2[2] - 48 + (line.op2[1] - 48) * 10;
   }
-  inst = embedder(inst,opt,16);
 
+  if(line.op3[0] != 36) {
+    inst = embedder(inst,opt,16);
+  }
+  else{
+    inst = embedder(inst,opt,21);
+  }
+  
   //and op3
   //36 = ASCII code for "$"
   //if no dollar sign, it will start its offset at shamt
@@ -79,15 +146,11 @@ int convertToMachCode(struct mips_line line){
     else{
       opt = line.op3[2] - 48 + (line.op3[1] - 48) * 10;
     }
-  inst = embedder(inst,opt,21);
+  inst = embedder(inst,opt,16);
   }
-
-  
 
   return inst;
 }
-
-
 
 //insert a number into an int, starting at the offset
 int embedder(int base,int embed,int off){
@@ -185,7 +248,6 @@ void binary_checker(int check){
   printf("\n");
 }
 
-//testing ADD
 int main(int argc,char *argv[]){
   if( argc == 2){
     struct mips_line line;
@@ -196,9 +258,17 @@ int main(int argc,char *argv[]){
     }
 
     while(mips_par(mips_file, &line)){
-      for(int i=0; instMap[i].name != NULL; i++)
-      if( 0 == strcmp(line.inst_dir, instMap[i].name)){
-        binary_checker(convertToMachCode(line));
+      //check if its R-Type Instruction.
+      for(int i=0; r_type_inst[i].name != NULL; i++){
+        if( 0 == strcmp(line.inst_dir, r_type_inst[i].name)){
+          binary_checker(r_type_machine_code(line));
+        }
+      }
+      //check if its I-Type Instruction.
+      for(int i=0; i_type_inst[i].name != NULL; i++){
+        if (0 == strcmp(line.inst_dir, i_type_inst[i].name)){
+          binary_checker(i_type_machine_code(line));
+        }
       }
     }
   }
