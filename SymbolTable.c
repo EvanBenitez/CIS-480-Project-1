@@ -130,6 +130,7 @@ struct symbol_table *create_table(FILE *code){
       table = realloc(table,sizeof(struct symbol_table) * (lable_count + 10));
     }
   }
+  fseek(code,0,SEEK_SET);
   return table;
 }
 
