@@ -37,14 +37,12 @@ struct mips_line {
 };
 
 int i_type_machine_code(struct mips_line line){
-  const char *instName;
   unsigned int inst;
   //checks if any instruction matches and sets the decimal to inst
   for(int i=0; i_type_inst[i].name != NULL; i++) {
     if(strcmp(line.inst_dir, i_type_inst[i].name) == 0) {
       printf("%s: ", i_type_inst[i].name); //just adding for convinience in testing
       inst = i_type_inst[i].address;
-      instName = i_type_inst[i].name;
     }
   }
 
@@ -58,12 +56,7 @@ int i_type_machine_code(struct mips_line line){
   else{
     opt = line.op1[2] - 48 + (line.op1[1] - 48) * 10;
   }
-  if(strcmp(instName, "sw") == 0){ //flipping offset of rs and rd for SW inst
-    inst = embedder(inst,opt,21);
-  }
-  else{
-    inst = embedder(inst,opt,16);
-  }
+  inst = embedder(inst,opt,16);
 
   //rs
   for(int i=0; i < strlen(line.op2); i++){
@@ -76,12 +69,8 @@ int i_type_machine_code(struct mips_line line){
       }
     }
   }
-  if(strcmp(instName, "sw") == 0){ //fipping offset of rs and rd for SW inst
-    inst = embedder(inst,opt,16);
-  }
-  else{
-    inst = embedder(inst,opt,21);
-  }
+  inst = embedder(inst,opt,21);
+
   //Offset Address
   opt = strtol(line.op2, NULL, 10);
   inst = embedder(inst,opt,32);
