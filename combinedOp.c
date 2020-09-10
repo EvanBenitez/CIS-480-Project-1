@@ -18,8 +18,8 @@ struct {
   const char *name;
   const unsigned int address;
 } i_type_inst[] = {
-  {"lw", 35 },
-  {"sw", 43},
+  {"lw", 0x8c000000},
+  {"sw", 0xac000000},
   { NULL, 0},
 };
 
@@ -49,8 +49,6 @@ int i_type_machine_code(struct mips_line line){
 
   int opt = 0;
   int op1;
-  opcode = inst;
-  inst = embedder(inst,opcode, 26);
 
   //rd
   if(line.op1[2] == 0){
@@ -59,10 +57,15 @@ int i_type_machine_code(struct mips_line line){
   else{
     opt = line.op1[2] - 48 + (line.op1[1] - 48) * 10;
   }
-  inst = embedder(inst,opt,16);
+  if(inst == 0xac000000){ //flipping offset of rs and rd for SW inst
+    inst = embedder(inst,opt,21);
+  }
+  else{
+    inst = embedder(inst,opt,16);
+  }
 
   //rs
-  for(int i=0; i < sizeof(line.op2); i++){
+  for(int i=0; i < strlen(line.op2); i++){
     if(line.op2[i] == 40){ //"("
       if(line.op2[i+3] == 0 || 41) { //")"
         opt = line.op2[i+2] - 48;
@@ -72,20 +75,25 @@ int i_type_machine_code(struct mips_line line){
       }
     }
   }
-    inst = embedder(inst,opt,21);
-  
-  //Offset Address
-  if(line.op2[1] == 0){
-    opt = line.op2[0] - 48;
+  if(inst == 0xac000000){ //fipping offset of rs and rd for SW inst
+    inst = embedder(inst,opt,16);
   }
   else{
-    opt = line.op2[1] - 48 + (line.op2[0] - 48) * 10;
+    inst = embedder(inst,opt,21);
   }
-  inst = embedder(inst,opt,0);
+  //Offset Address
+  for(int i=0; line.op2[i] != 40; i++) {
+    if(line.op2[1] == 0){
+      opt = line.op2[0] - 48;
+    }
+    else{
+      opt = line.op2[1] - 48 + (line.op2[0] - 48) * 10;
+    }
+  }
+  inst = embedder(inst,opt,32);
 
   return inst;
 }
-
 
 int r_type_machine_code(struct mips_line line){
 
@@ -224,13 +232,6 @@ void binary_checker(int check){
     }
   }
 
-  // for(i = 0; i < 32; i++){
-  //   printf("%c", out[i]);
-  //   if((i+1)%4 == 0){
-  //     printf(" ");
-  //   }
-  // }
-  
   for(i = 0; i < 32; i++){
     printf("%c", out[i]);
     if(i < 6 || i > 24){
