@@ -81,15 +81,9 @@ int i_type_machine_code(struct mips_line line){
   else{
     inst = embedder(inst,opt,21);
   }
+  
   //Offset Address
-  for(int i=0; line.op2[i] != 40; i++) {
-    if(line.op2[1] == 0){
-      opt = line.op2[0] - 48;
-    }
-    else{
-      opt = line.op2[1] - 48 + (line.op2[0] - 48) * 10;
-    }
-  }
+  opt = strtol(line.op2, NULL, 10);
   inst = embedder(inst,opt,32);
 
   return inst;
