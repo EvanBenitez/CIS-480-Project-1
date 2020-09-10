@@ -139,12 +139,12 @@ int r_type_machine_code(struct mips_line line){
   //if no dollar sign, it will start its offset at shamt
   //else at rd
   if(line.op3[0] != 36){
-    if(line.op3[1] == 0){
-      opt = line.op3[0] - 48;
+     if(line.op3[1] == 'x'){
+      opt = (int) strtol(line.op3,NULL,0);
     }
     else{
-      opt = line.op3[1] - 48 + (line.op3[0] - 48) * 10;
-  }
+      opt = (int) strtol(line.op3,NULL,10);
+    }
   inst = embedder(inst,opt,6);  
   }
   else{
