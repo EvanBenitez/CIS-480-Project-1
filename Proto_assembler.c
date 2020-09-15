@@ -14,9 +14,9 @@ static int lable_count = 0; //counter for number of symbol table elements
 struct mips_line {
   char lable[40];     //mips line lable
   char inst_dir[15];  //mips directive or instruction
-  char op1[40];      //first operand
-  char op2[40];      //second operand
-  char op3[40];      //third operand
+  char op1[80];      //first operand
+  char op2[15];      //second operand
+  char op3[15];      //third operand
 };
 
 //structure for the R-type instructions
@@ -109,20 +109,29 @@ int mips_par(FILE *in,struct mips_line *line){
       lable = 1;
     }
     //replace ',' with ' ' for sscanf funciton compatibilty
-    if(sample[index] == ','){
-      sample[index] = ' ';
-    }
+    //if(sample[index] == ','){
+    //  sample[index] = ' ';
+  //  }
     index++;
   }
   sample[index] = 0;
 
   //slightly different structure of sscanf if lable present
   if(lable == 0){
-    sscanf(sample,"%s %s %s %s",line->inst_dir, line->op1, line->op2, line->op3);
+    sscanf(sample,"%s %[^,],%[^,],%[^,]",line->inst_dir, line->op1, line->op2, line->op3);
+    //after the fact fix for multiple items on single .word directive
+    if(0==strcmp(line->inst_dir,".word")){
+      sscanf(sample,"%s %s",line->inst_dir, line->op1);
+    }
   }
   else{
-    sscanf(sample,"%s %s %s %s %s",line->lable, line->inst_dir, line->op1, line->op2, line->op3);
+    sscanf(sample,"%s %s %[^,],%[^,],%[^,]",line->lable, line->inst_dir, line->op1, line->op2, line->op3);
+    //after the fact fix for multiple items on single .word directive
+    if(0==strcmp(line->inst_dir,".word")){
+      sscanf(sample,"%s %s %s",line->lable, line->inst_dir, line->op1);
+    }
   }
+
   return 1;
 }
 
@@ -420,6 +429,37 @@ int big_end(int little){
   return big;
 }
 
+//print list of words to a file
+void print_word(char num[], int *pc, FILE *out){
+  int i = 0;
+  int complete = 0;
+  char neg = 0;
+
+  do{
+    if(num[i] == '-'){
+      neg = 1;
+      i++;
+    }
+    if(num[i] != ',' && num[i] != 0){
+      complete *= 10;
+      complete += num[i] - 48;
+    }
+    else{
+      if(neg == 1){
+        complete *= -1;
+      }
+      complete = big_end(complete);
+      if(fwrite(&complete,sizeof(int),1,out) != 1){
+        perror("Writing unsuccessful\n");
+        exit(1);
+      }
+      *pc += 4;
+      complete = 0;
+    }
+    i++;
+  }while(num[i-1] != 0);
+}
+
 
 
 int main(int argc,char *argv[]){
@@ -505,19 +545,7 @@ int main(int argc,char *argv[]){
         }//working block end
         else{
           if(strcmp(line.inst_dir,".word") == 0){
-            int temp;
-            if(line.op1[1] != 'x'){
-              temp = strtol(line.op1,NULL,10);
-            }
-            else{
-              temp = strtol(line.op1,NULL,0);
-            }
-            temp = big_end(temp);
-            if(fwrite(&temp,sizeof(int),1,out) != 1){
-              perror("Failed to write word to data section\n");
-              exit(1);
-            }
-            data += 4;
+            print_word(line.op1,&data,out);
           }
           else if(strcmp(line.inst_dir,".space") == 0){
             int temp;
