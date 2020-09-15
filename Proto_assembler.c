@@ -408,6 +408,18 @@ long LA(struct mips_line line, struct symbol_table *table){
   return pseudo;
 }
 
+//Reverse the bytes of an int for file output in big endian order
+int big_end(int little){
+  int big = 0;
+
+  big = embedder(big,little & 0x000000FF ,24);
+  big = embedder(big,(little & 0x0000FF00) >> 8 ,16);
+  big = embedder(big,(little & 0x00FF0000) >> 16,8);
+  big = embedder(big,(little & 0xFF000000) >> 24,0);
+
+  return big;
+}
+
 
 
 int main(int argc,char *argv[]){
@@ -449,13 +461,15 @@ int main(int argc,char *argv[]){
         }
         else if(segment == 't'){//working block begin
           if(strcmp(line.inst_dir,"la") == 0){
-            ulong pseudo = LA(line,table);
+            long pseudo = LA(line,table);
             temp = (int)(pseudo >> 32);
+            temp = big_end(temp);
             if(fwrite(&temp,sizeof(int),1,out) != 1){
               perror("Writing unsuccessful\n");
               exit(1);
             }
             temp = (int)(pseudo & 0x00000000ffffffff);
+            temp = big_end(temp);
             if(fwrite(&temp,sizeof(int),1,out) != 1){
               perror("Writing unsuccessful\n");
               exit(1);
@@ -481,6 +495,7 @@ int main(int argc,char *argv[]){
                 }
               }
             }
+            temp = big_end(temp);
             if(fwrite(&temp,sizeof(int),1,out) !=1){
               perror("Fail to write\n");
               exit(1);
@@ -497,6 +512,7 @@ int main(int argc,char *argv[]){
             else{
               temp = strtol(line.op1,NULL,0);
             }
+            temp = big_end(temp);
             if(fwrite(&temp,sizeof(int),1,out) != 1){
               perror("Failed to write word to data section\n");
               exit(1);
