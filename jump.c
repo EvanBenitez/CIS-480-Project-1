@@ -486,9 +486,8 @@ int jump(struct mips_line line, struct symbol_table *table){
       opt = table[i].position;
     }
   }
-  opt = opt/4;
-  opt = opt & 0x03ffffff;
-  inst = embedder(inst,opt,0) << 2;
+  opt = (opt & 0x0fffffff) >> 2;
+  inst = embedder(inst,opt,0);
   return inst;
 }
 
