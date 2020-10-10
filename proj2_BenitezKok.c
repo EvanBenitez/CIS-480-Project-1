@@ -120,7 +120,6 @@ int mips_par(FILE *in,struct mips_line *line){
   }
   sample[index] = 0;
   words[index] = 0;//.word contingincy
-  // jump[index] = 0;
 
   //slightly different structure of sscanf if lable present
   if(lable == 0){
@@ -136,9 +135,6 @@ int mips_par(FILE *in,struct mips_line *line){
     //after the fact fix for multiple items on single .word directive
     if(0==strcmp(line->inst_dir,".word")){
       sscanf(words,"%s %s %s",line->lable, line->inst_dir, line->op1);
-    }
-    else if (0==strcmp(line->inst_dir,"j")){
-      sscanf(words,"%s %s",line->inst_dir, line->op1);
     }
   }
 
